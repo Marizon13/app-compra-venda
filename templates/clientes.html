@@ -53,6 +53,10 @@
                             <td>{{ c.email }}</td>
                             <td>{{ c.telefone }}</td>
                             <td>
+                                <!-- Botão de Editar Adicionado -->
+                                <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-warning">Editar</a>
+                                
+                                <!-- Botão de Excluir que já existia -->
                                 <a href="/excluir_cliente/{{ c.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este cliente?')">Excluir</a>
                             </td>
                         </tr>

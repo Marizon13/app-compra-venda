@@ -12,13 +12,17 @@
                 <form action="/produtos" method="POST">
                     <div class="mb-3">
                         <label class="form-label">Nome do Produto</label>
-                        <input type="text" name="nome" class="form-control" placeholder="Ex: Teclado Mecânico" required>
+                        <input type="text" name="nome" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Preço (R$)</label>
-                        <input type="number" name="preco" step="0.01" class="form-control" placeholder="0.00" required>
+                        <input type="number" step="0.01" name="preco" class="form-control" required>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Salvar Produto</button>
+                    <div class="mb-3">
+                        <label class="form-label">Qtd em Estoque</label>
+                        <input type="number" name="estoque" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Salvar Produto</button>
                 </form>
             </div>
         </div>
@@ -37,6 +41,7 @@
                             <th>ID</th>
                             <th>Nome</th>
                             <th>Preço</th>
+                            <th>Estoque</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -45,15 +50,22 @@
                         <tr>
                             <td>{{ p.id }}</td>
                             <td>{{ p.nome }}</td>
-                            <td>R$ {{ p.preco }}</td>
+                            <td>R$ {{ "%.2f"|format(p.preco) }}</td>
                             <td>
-                                <!-- Botão de Excluir Atualizado -->
-                                <a href="/excluir_produto/{{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?')">Excluir</a>
+                                {% if p.estoque == 0 %}
+                                    <span class="badge bg-danger">Sem Estoque</span>
+                                {% else %}
+                                    {{ p.estoque }} un.
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/editar_produto/{{ p.id }}" class="btn btn-sm btn-warning">Editar</a>
+                                <a href="/excluir_produto/{{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">Nenhum produto cadastrado ainda.</td>
+                            <td colspan="5" class="text-center text-muted">Nenhum produto cadastrado.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

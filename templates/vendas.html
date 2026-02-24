@@ -2,10 +2,10 @@
 
 {% block content %}
 <div class="row mt-4">
-    <!-- Coluna do Formulário -->
+    <!-- Coluna do Formulário de Nova Venda -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Registrar Venda</h5>
             </div>
             <div class="card-body">
@@ -13,7 +13,7 @@
                     <div class="mb-3">
                         <label class="form-label">Cliente</label>
                         <select name="cliente_id" class="form-select" required>
-                            <option value="">Selecione um cliente...</option>
+                            <option value="">Selecione o Cliente</option>
                             {% for c in clientes %}
                                 <option value="{{ c.id }}">{{ c.nome }}</option>
                             {% endfor %}
@@ -22,24 +22,57 @@
                     <div class="mb-3">
                         <label class="form-label">Produto</label>
                         <select name="produto_id" class="form-select" required>
-                            <option value="">Selecione um produto...</option>
+                            <option value="">Selecione o Produto</option>
                             {% for p in produtos %}
-                                <option value="{{ p.id }}">{{ p.nome }} - R$ {{ p.preco }}</option>
+                                <option value="{{ p.id }}">{{ p.nome }} (Estoque: {{ p.estoque }})</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Quantidade</label>
-                        <input type="number" name="quantidade" min="1" class="form-control" value="1" required>
+                        <input type="number" name="quantidade" class="form-control" min="1" required>
                     </div>
-                    <button type="submit" class="btn btn-warning w-100 fw-bold">Registrar Venda</button>
+                    <button type="submit" class="btn btn-success w-100">Finalizar Venda</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Coluna da Tabela de Vendas -->
+    <!-- Coluna da Tabela e Filtros -->
     <div class="col-md-8">
+        
+        <!-- CARD DE FILTROS -->
+        <div class="card shadow-sm mb-3 border-secondary">
+            <div class="card-body py-2 bg-light">
+                <form method="GET" action="/vendas" class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <strong>Filtrar por:</strong>
+                    </div>
+                    <div class="col">
+                        <select name="cliente_id" class="form-select form-select-sm">
+                            <option value="">Todos os Clientes</option>
+                            {% for c in clientes %}
+                                <option value="{{ c.id }}" {% if c.id|string == cliente_filtro %}selected{% endif %}>{{ c.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col">
+                        <select name="produto_id" class="form-select form-select-sm">
+                            <option value="">Todos os Produtos</option>
+                            {% for p in produtos %}
+                                <option value="{{ p.id }}" {% if p.id|string == produto_filtro %}selected{% endif %}>{{ p.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-dark btn-sm">Buscar</button>
+                        <a href="/vendas" class="btn btn-outline-secondary btn-sm">Limpar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabela de Vendas -->
         <div class="card shadow-sm">
             <div class="card-header bg-dark text-white">
                 <h5 class="mb-0">Histórico de Vendas</h5>
@@ -63,15 +96,15 @@
                             <td>{{ v.cliente.nome }}</td>
                             <td>{{ v.produto.nome }}</td>
                             <td>{{ v.quantidade }}</td>
-                            <!-- Calcula o total na própria tela: quantidade * preço do produto -->
-                            <td class="text-success fw-bold">R$ {{ "%.2f"|format(v.quantidade * v.produto.preco) }}</td>
+                            <!-- Calcula o total multiplicando a quantidade pelo preço do produto -->
+                            <td>R$ {{ "%.2f"|format(v.quantidade * v.produto.preco) }}</td>
                             <td>
-                                <a href="/excluir_venda/{{ v.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Excluir esta venda?')">Excluir</a>
+                                <a href="/excluir_venda/{{ v.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza? O produto voltará para o estoque.')">Cancelar Venda</a>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Nenhuma venda registrada ainda.</td>
+                            <td colspan="6" class="text-center text-muted">Nenhuma venda encontrada com estes filtros.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
