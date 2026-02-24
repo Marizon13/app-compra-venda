@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 mb-4">
+        <h2>Dashboard</h2>
+        <p class="text-muted">Resumo do sistema AppCompraVenda</p>
+    </div>
+
+    <!-- Card Total de Clientes -->
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3 shadow-sm">
+            <div class="card-header">Total de Clientes</div>
+            <div class="card-body">
+                <h2 class="card-title">{{ total_clientes }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Total de Produtos -->
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3 shadow-sm">
+            <div class="card-header">Total de Produtos</div>
+            <div class="card-body">
+                <h2 class="card-title">{{ total_produtos }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Total de Vendas (Quantidade) -->
+    <div class="col-md-3">
+        <div class="card text-dark bg-warning mb-3 shadow-sm">
+            <div class="card-header">Vendas Realizadas</div>
+            <div class="card-body">
+                <h2 class="card-title">{{ total_vendas }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Receita Total -->
+    <div class="col-md-3">
+        <div class="card text-white bg-dark mb-3 shadow-sm">
+            <div class="card-header">Receita Total</div>
+            <div class="card-body">
+                <h2 class="card-title">R$ {{ "%.2f"|format(receita_total) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

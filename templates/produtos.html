@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Coluna do Formulário -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Novo Produto</h5>
+            </div>
+            <div class="card-body">
+                <form action="/produtos" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Produto</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: Teclado Mecânico" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Preço (R$)</label>
+                        <input type="number" name="preco" step="0.01" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Salvar Produto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna da Tabela de Produtos -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Lista de Produtos</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Preço</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in produtos %}
+                        <tr>
+                            <td>{{ p.id }}</td>
+                            <td>{{ p.nome }}</td>
+                            <td>R$ {{ p.preco }}</td>
+                            <td>
+                                <!-- Botão de Excluir Atualizado -->
+                                <a href="/excluir_produto/{{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?')">Excluir</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Nenhum produto cadastrado ainda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

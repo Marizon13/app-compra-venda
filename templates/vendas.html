@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Coluna do Formulário -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Registrar Venda</h5>
+            </div>
+            <div class="card-body">
+                <form action="/vendas" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente</label>
+                        <select name="cliente_id" class="form-select" required>
+                            <option value="">Selecione um cliente...</option>
+                            {% for c in clientes %}
+                                <option value="{{ c.id }}">{{ c.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Produto</label>
+                        <select name="produto_id" class="form-select" required>
+                            <option value="">Selecione um produto...</option>
+                            {% for p in produtos %}
+                                <option value="{{ p.id }}">{{ p.nome }} - R$ {{ p.preco }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" name="quantidade" min="1" class="form-control" value="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">Registrar Venda</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna da Tabela de Vendas -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Histórico de Vendas</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Produto</th>
+                            <th>Qtd</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in vendas %}
+                        <tr>
+                            <td>{{ v.id }}</td>
+                            <td>{{ v.cliente.nome }}</td>
+                            <td>{{ v.produto.nome }}</td>
+                            <td>{{ v.quantidade }}</td>
+                            <!-- Calcula o total na própria tela: quantidade * preço do produto -->
+                            <td class="text-success fw-bold">R$ {{ "%.2f"|format(v.quantidade * v.produto.preco) }}</td>
+                            <td>
+                                <a href="/excluir_venda/{{ v.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Excluir esta venda?')">Excluir</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Nenhuma venda registrada ainda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
