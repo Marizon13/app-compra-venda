@@ -3,6 +3,7 @@
 Um sistema web completo para gerenciamento de clientes, produtos e vendas, desenvolvido com **Python, Flask e PostgreSQL**. Este projeto foi construído em Sprints, focando em criar um painel de controle simples, rápido e funcional.
 
 ## 🎥 Demonstração (Video Demo)
+Link do vídeo 1 => https://www.loom.com/share/257cb24f26d043f78193f4817107b85f
 *em construção*
 
 ## ✨ Funcionalidades (Sprint 1)
