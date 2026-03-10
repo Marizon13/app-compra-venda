@@ -2,27 +2,31 @@
 
 {% block content %}
 <div class="row mt-4">
-    <!-- Coluna do Formulário -->
+    <!-- Coluna do Formulário de Novo Produto -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Novo Produto</h5>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header text-white" style="background: linear-gradient(90deg, #f53d2d, #ff6633);">
+                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Cadastrar Produto</h5>
             </div>
             <div class="card-body">
                 <form action="/produtos" method="POST">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Nome do Produto</label>
-                        <input type="text" name="nome" class="form-control" required>
+                        <label class="form-label fw-bold">Nome do Produto</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: Teclado Mecânico" required>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Preço (R$)</label>
-                        <input type="number" step="0.01" name="preco" class="form-control" required>
+                        <label class="form-label fw-bold">Preço (R$)</label>
+                        <input type="number" step="0.01" min="0" name="preco" class="form-control" placeholder="Ex: 150.00" required>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Qtd em Estoque</label>
-                        <input type="number" name="estoque" class="form-control" required>
+                        <label class="form-label fw-bold">Estoque Inicial</label>
+                        <input type="number" name="estoque" class="form-control" min="0" placeholder="Ex: 10" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Salvar Produto</button>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Salvar Produto</button>
                 </form>
             </div>
         </div>
@@ -30,42 +34,65 @@
 
     <!-- Coluna da Tabela de Produtos -->
     <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Lista de Produtos</h5>
+        
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" style="color: #f53d2d;"><i class="bi bi-list-ul me-2"></i>Lista de Produtos</h5>
             </div>
-            <div class="card-body">
-                <table class="table table-striped">
+            
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Nome</th>
+                            <th>Nome do Produto</th>
                             <th>Preço</th>
-                            <th>Estoque</th>
-                            <th>Ações</th>
+                            <th class="text-center">Estoque</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for p in produtos %}
                         <tr>
-                            <td>{{ p.id }}</td>
-                            <td>{{ p.nome }}</td>
-                            <td>R$ {{ "%.2f"|format(p.preco) }}</td>
-                            <td>
+                            <td>#{{ p.id }}</td>
+                            <td class="fw-bold">{{ p.nome }}</td>
+                            
+                            <!-- Formatação Brasileira de Moeda -->
+                            <td class="text-success fw-bold">
+                                R$ {{ "%.2f"|format(p.preco)|replace('.', ',') }}
+                            </td>
+                            
+                            <td class="text-center">
+                                <!-- Lógica de Cores para o Estoque -->
                                 {% if p.estoque == 0 %}
-                                    <span class="badge bg-danger">Sem Estoque</span>
+                                    <span class="badge bg-danger">Esgotado</span>
+                                {% elif p.estoque <= 5 %}
+                                    <span class="badge bg-warning text-dark">{{ p.estoque }} un.</span>
                                 {% else %}
-                                    {{ p.estoque }} un.
+                                    <span class="badge bg-success">{{ p.estoque }} un.</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="/editar_produto/{{ p.id }}" class="btn btn-sm btn-warning">Editar</a>
-                                <a href="/excluir_produto/{{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
+                            
+                            <td class="text-center">
+                                <!-- BOTÃO EDITAR (Todos veem) -->
+                                <a href="/editar_produto/{{ p.id }}" class="btn btn-sm btn-outline-primary" title="Editar Produto">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+
+                                <!-- BOTÃO EXCLUIR (Apenas Admin vê) -->
+                                {% if session.get('is_admin') %}
+                                <a href="/excluir_produto/{{ p.id }}" class="btn btn-sm btn-outline-danger" title="Excluir Produto" onclick="return confirm('ATENÇÃO: Apagar este produto também apagará todas as VENDAS registradas com ele. Tem certeza?')">
+                                    <i class="bi bi-trash"></i> Excluir
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Nenhum produto cadastrado.</td>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-box fs-2 d-block mb-2"></i>
+                                Nenhum produto cadastrado no sistema.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

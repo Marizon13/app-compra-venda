@@ -4,47 +4,165 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AppCompraVenda</title>
-    <!-- Link do Bootstrap para o Design -->
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+    <!-- Ícones do Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- NOVO: Fonte Poppins do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- FONTE E FUNDO GERAL --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
 
-    <!-- Menu Superior (Navbar) -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        /* --- MENU SUPERIOR (Shopee Style) --- */
+        .navbar-custom {
+            background: linear-gradient(90deg, #f53d2d, #ff6633);
+            box-shadow: 0 4px 12px rgba(245, 61, 45, 0.2);
+        }
+        .navbar-custom .navbar-brand, 
+        .navbar-custom .nav-link, 
+        .navbar-custom .navbar-text {
+            color: white !important;
+            font-weight: 500;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #ffe6e6 !important;
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        /* --- BOTÕES GERAIS --- */
+        .btn-primary {
+            background-color: #f53d2d !important;
+            border-color: #f53d2d !important;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(245, 61, 45, 0.3);
+            transition: 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #d73222 !important;
+            transform: scale(1.02);
+        }
+
+        /* --- ESTILIZANDO TODAS AS OUTRAS ABAS (Tabelas, Cards e Forms) --- */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        
+        .table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            margin-top: 15px;
+        }
+        
+        .table thead th {
+            background-color: #f53d2d !important;
+            color: white !important;
+            font-weight: 500;
+            border: none;
+        }
+        .table tbody td {
+            vertical-align: middle;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        .form-control:focus {
+            border-color: #f53d2d;
+            box-shadow: 0 0 0 0.25rem rgba(245, 61, 45, 0.25);
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu Superior -->
+    <nav class="navbar navbar-expand-lg navbar-custom mb-4 shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="/">🛒 AppCompraVenda</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            <!-- LOGO NOVA -->
+            <a class="navbar-brand fs-4 fw-bold" href="/">
+                <i class="bi bi-cart4 me-2"></i>AppCompraVenda
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="bi bi-list text-white fs-2"></i>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
+                    
+                    <!-- IDENTIFICAÇÃO DO USUÁRIO LOGADO -->
+                    {% if session.get('usuario_nome') %}
+                    <li class="nav-item me-3 mb-2 mb-lg-0">
+                        <span class="navbar-text small">
+                            <i class="bi bi-person-circle me-1"></i> Olá, <strong>{{ session['usuario_nome'] }}</strong>
+                            <!-- Adiciona as Badges de Admin ou Vendedor -->
+                            {% if session.get('is_admin') %}
+                                <span class="badge bg-danger ms-1 border border-light"><i class="bi bi-shield-lock-fill"></i> Admin</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark ms-1"><i class="bi bi-tag-fill"></i> Vendedor</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    {% endif %}
+
+                    <!-- DASHBOARD SÓ APARECE PARA ADMIN -->
+                    {% if session.get('is_admin') %}
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Dashboard</a>
+                        <a class="nav-link" href="/"><i class="bi bi-graph-up me-1"></i> Dashboard</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="/produtos"><i class="bi bi-box-seam me-1"></i> Produtos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/produtos">Produtos</a>
+                        <a class="nav-link" href="/clientes"><i class="bi bi-people me-1"></i> Clientes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/clientes">Clientes</a>
-                    </li>
-                    <!-- Link de Vendas -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="/vendas">Vendas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/movimentacoes">Movimentações</a>
+                        <a class="nav-link" href="/vendas"><i class="bi bi-tags me-1"></i> Vendas</a>
                     </li>
                     
-                    <!-- BOTÃO DE SAIR ADICIONADO AQUI -->
-                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
-                        <a class="btn btn-outline-light btn-sm px-4" href="/logout">Sair</a>
+                    <!-- ABA EQUIPE SÓ APARECE PARA ADMIN -->
+                    {% if session.get('is_admin') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/usuarios"><i class="bi bi-person-badge me-1"></i> Equipe</a>
                     </li>
+                    {% endif %}
+                    
+                    <!-- BOTÃO DE SAIR -->
+                    {% if session.get('usuario_logado') %}
+                    <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
+                        <a class="btn btn-outline-light btn-sm px-4 rounded-pill fw-bold" href="/logout">Sair</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Aqui é onde as outras telas vão injetar o conteúdo delas -->
+    <!-- Área onde as outras telas vão aparecer -->
     <div class="container">
         {% block content %}
         {% endblock %}

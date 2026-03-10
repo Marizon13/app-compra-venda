@@ -4,25 +4,32 @@
 <div class="row mt-4">
     <!-- Coluna do Formulário -->
     <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Novo Cliente</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-header text-white" style="background: linear-gradient(90deg, #f53d2d, #ff6633);">
+                <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Novo Cliente</h5>
             </div>
             <div class="card-body">
-                <form action="/clientes" method="POST">
+                <!-- AQUI ESTÁ A TRAVA: onsubmit chama a validação antes de enviar -->
+                <form action="/clientes" method="POST" onsubmit="return validarFormulario(event)">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Nome Completo</label>
-                        <input type="text" name="nome" class="form-control" placeholder="Ex: João da Silva" required>
+                        <label class="form-label fw-bold">Nome Completo</label>
+                        <!-- minlength="3" exige que o nome tenha pelo menos 3 letras -->
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: João da Silva" minlength="3" required>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">E-mail</label>
+                        <label class="form-label fw-bold">E-mail</label>
+                        <!-- type="email" já obriga a ter o @ e o .com -->
                         <input type="email" name="email" class="form-control" placeholder="joao@email.com" required>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" name="telefone" class="form-control" placeholder="(11) 99999-9999" required>
+                        <label class="form-label fw-bold">Telefone</label>
+                        <input type="text" id="telefone_input" name="telefone" class="form-control" placeholder="(11) 90000-0000" maxlength="15" onkeyup="mascaraTelefone(event)" required>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Salvar Cliente</button>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Salvar Cliente</button>
                 </form>
             </div>
         </div>
@@ -30,39 +37,47 @@
 
     <!-- Coluna da Tabela de Clientes -->
     <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Lista de Clientes</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0" style="color: #f53d2d;"><i class="bi bi-people me-2"></i>Lista de Clientes</h5>
             </div>
-            <div class="card-body">
-                <table class="table table-striped">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Nome</th>
                             <th>E-mail</th>
                             <th>Telefone</th>
-                            <th>Ações</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for c in clientes %}
                         <tr>
-                            <td>{{ c.id }}</td>
-                            <td>{{ c.nome }}</td>
+                            <td>#{{ c.id }}</td>
+                            <td class="fw-bold">{{ c.nome }}</td>
                             <td>{{ c.email }}</td>
                             <td>{{ c.telefone }}</td>
-                            <td>
-                                <!-- Botão de Editar Adicionado -->
-                                <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-warning">Editar</a>
+                            <td class="text-center">
+                                <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                                 
-                                <!-- Botão de Excluir que já existia -->
-                                <a href="/excluir_cliente/{{ c.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este cliente?')">Excluir</a>
+                                <!-- AQUI FOI CORRIGIDO PARA USAR A NOVA REGRA DO ADMIN -->
+                                {% if session.get('is_admin') %}
+                                <a href="/excluir_cliente/{{ c.id }}" class="btn btn-sm btn-outline-danger" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir este cliente?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Nenhum cliente cadastrado ainda.</td>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Nenhum cliente cadastrado ainda.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -71,4 +86,32 @@
         </div>
     </div>
 </div>
+
+<!-- SCRIPTS DE MÁSCARA E VALIDAÇÃO MANTIDOS -->
+<script>
+    // 1. Função que coloca os parênteses e tracinhos
+    function mascaraTelefone(event) {
+        let input = event.target;
+        let valor = input.value.replace(/\D/g, ""); // Tira tudo que não é número
+        
+        valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2");
+        valor = valor.replace(/(\d)(\d{4})$/, "$1-$2");
+        
+        input.value = valor;
+    }
+
+    // 2. Função que bloqueia o botão salvar se os dados estiverem errados
+    function validarFormulario(event) {
+        let telefone = document.getElementById('telefone_input').value;
+        
+        // Verifica se o telefone tem pelo menos 14 caracteres: Ex: (11) 9999-9999
+        if (telefone.length < 14) {
+            alert("Erro: O telefone está incompleto. Por favor, digite o DDD e todos os números.");
+            event.preventDefault(); // BLOQUEIA O ENVIO DO FORMULÁRIO
+            return false;
+        }
+        
+        return true; // Se passar por tudo, deixa salvar
+    }
+</script>
 {% endblock %}

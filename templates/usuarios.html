@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Coluna do Formulário -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header text-white" style="background: linear-gradient(90deg, #f53d2d, #ff6633);">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Novo Usuário</h5>
+            </div>
+            <div class="card-body">
+                <form action="/usuarios" method="POST">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Funcionário</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: Maria Vendedora" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">E-mail de Acesso</label>
+                        <input type="email" name="email" class="form-control" placeholder="maria@loja.com" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Senha Inicial</label>
+                        <input type="password" name="senha" class="form-control" placeholder="******" minlength="4" required>
+                    </div>
+                    
+                    <!-- INTERRUPTOR PARA DEFINIR SE É ADMIN -->
+                    <div class="mb-4 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="isAdminCheck" name="is_admin">
+                        <label class="form-check-label fw-bold text-danger" for="isAdminCheck">
+                            <i class="bi bi-shield-lock me-1"></i> Dar privilégios de Administrador
+                        </label>
+                        <small class="d-block text-muted">Se desmarcado, o usuário será apenas Vendedor.</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Cadastrar Acesso</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna da Tabela de Usuários -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0" style="color: #f53d2d;"><i class="bi bi-shield-check me-2"></i>Equipe e Acessos</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>E-mail (Login)</th>
+                            <th class="text-center">Nível de Acesso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td>{{ u.id }}</td>
+                            <td class="fw-bold">{{ u.nome }}</td>
+                            <td>{{ u.email }}</td>
+                            <td class="text-center">
+                                {% if u.is_admin %}
+                                    <span class="badge bg-danger"><i class="bi bi-star-fill me-1"></i> Admin</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-tag-fill me-1"></i> Vendedor</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Nenhum usuário extra cadastrado ainda.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

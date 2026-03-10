@@ -2,10 +2,37 @@
 
 {% block content %}
 <div class="row mt-4">
-    <div class="col-12 mb-4">
-        <h2>Dashboard</h2>
-        <p class="text-muted">Resumo do sistema AppCompraVenda</p>
+    
+    <!-- Cabeçalho com Título e Botão de Exportar -->
+    <div class="col-12 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Dashboard</h2>
+            <p class="text-muted mb-0">Resumo do sistema AppCompraVenda</p>
+        </div>
+        <a href="{{ url_for('exportar_relatorio') }}" class="btn btn-success shadow-sm">
+            📊 Exportar Relatório (Excel)
+        </a>
     </div>
+
+    <!-- Alerta de Estoque Baixo -->
+    {% if produtos_baixo_estoque %}
+    <div class="col-12 mb-4">
+        <div class="alert alert-warning shadow-sm border-warning" role="alert">
+            <h5 class="alert-heading text-danger">
+                ⚠️ Atenção: Produtos com Estoque Baixo!
+            </h5>
+            <hr>
+            <p class="mb-2">Os seguintes produtos estão precisando de reposição (5 unidades ou menos):</p>
+            <ul class="mb-0">
+                {% for produto in produtos_baixo_estoque %}
+                    <li>
+                        <strong>{{ produto.nome }}</strong> — Restam apenas <span class="badge bg-danger">{{ produto.estoque }}</span> unidades.
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Card Total de Clientes -->
     <div class="col-md-3">
@@ -46,5 +73,53 @@
             </div>
         </div>
     </div>
+
+    <!-- NOVO: Área do Gráfico Chart.js -->
+    <div class="col-12 mt-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">📊 Estoque de Produtos</h5>
+            </div>
+            <div class="card-body">
+                <!-- A tag canvas é onde o gráfico será desenhado -->
+                <canvas id="graficoEstoque" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<!-- Importando a biblioteca do Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Script para desenhar o gráfico -->
+<script>
+    // Pegando as listas que vieram do Python
+    const nomesProdutos = {{ nomes_produtos | tojson }};
+    const estoquesProdutos = {{ estoques_produtos | tojson }};
+
+    // Configuração do Gráfico
+    const ctx = document.getElementById('graficoEstoque').getContext('2d');
+    const meuGrafico = new Chart(ctx, {
+        type: 'bar', // Tipo barra
+        data: {
+            labels: nomesProdutos, // Nomes no eixo X
+            datasets: [{
+                label: 'Quantidade em Estoque',
+                data: estoquesProdutos, // Valores no eixo Y
+                backgroundColor: 'rgba(54, 162, 235, 0.5)', // Cor azul transparente
+                borderColor: 'rgba(54, 162, 235, 1)', // Borda azul forte
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

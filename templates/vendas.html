@@ -4,14 +4,15 @@
 <div class="row mt-4">
     <!-- Coluna do Formulário de Nova Venda -->
     <div class="col-md-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Registrar Venda</h5>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header text-white" style="background: linear-gradient(90deg, #f53d2d, #ff6633);">
+                <h5 class="mb-0"><i class="bi bi-cart-plus me-2"></i>Registrar Venda</h5>
             </div>
             <div class="card-body">
                 <form action="/vendas" method="POST">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Cliente</label>
+                        <label class="form-label fw-bold">Cliente</label>
                         <select name="cliente_id" class="form-select" required>
                             <option value="">Selecione o Cliente</option>
                             {% for c in clientes %}
@@ -19,20 +20,28 @@
                             {% endfor %}
                         </select>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Produto</label>
+                        <label class="form-label fw-bold">Produto</label>
                         <select name="produto_id" class="form-select" required>
                             <option value="">Selecione o Produto</option>
                             {% for p in produtos %}
-                                <option value="{{ p.id }}">{{ p.nome }} (Estoque: {{ p.estoque }})</option>
+                                <!-- SE O ESTOQUE FOR ZERO, DESABILITA A OPÇÃO NO MENU -->
+                                <option value="{{ p.id }}" {% if p.estoque == 0 %}disabled{% endif %}>
+                                    {{ p.nome }} | R$ {{ "%.2f"|format(p.preco)|replace('.', ',') }} 
+                                    {% if p.estoque == 0 %} (ESGOTADO) {% else %} (Estoque: {{ p.estoque }}) {% endif %}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Quantidade</label>
-                        <input type="number" name="quantidade" class="form-control" min="1" required>
+                        <label class="form-label fw-bold">Quantidade</label>
+                        <!-- min="1" impede vender 0 ou quantidade negativa -->
+                        <input type="number" name="quantidade" class="form-control" min="1" placeholder="Ex: 2" required>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Finalizar Venda</button>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Finalizar Venda</button>
                 </form>
             </div>
         </div>
@@ -42,11 +51,11 @@
     <div class="col-md-8">
         
         <!-- CARD DE FILTROS -->
-        <div class="card shadow-sm mb-3 border-secondary">
-            <div class="card-body py-2 bg-light">
+        <div class="card shadow-sm border-0 mb-3" style="background-color: #fcfcfc;">
+            <div class="card-body py-3">
                 <form method="GET" action="/vendas" class="row g-2 align-items-center">
                     <div class="col-auto">
-                        <strong>Filtrar por:</strong>
+                        <i class="bi bi-funnel text-secondary"></i> <strong class="text-secondary">Filtrar:</strong>
                     </div>
                     <div class="col">
                         <select name="cliente_id" class="form-select form-select-sm">
@@ -65,46 +74,84 @@
                         </select>
                     </div>
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-dark btn-sm">Buscar</button>
-                        <a href="/vendas" class="btn btn-outline-secondary btn-sm">Limpar</a>
+                        <button type="submit" class="btn btn-secondary btn-sm fw-bold px-3">Buscar</button>
+                        <a href="/vendas" class="btn btn-outline-secondary btn-sm px-3">Limpar</a>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Tabela de Vendas -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Histórico de Vendas</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" style="color: #f53d2d;"><i class="bi bi-receipt me-2"></i>Histórico de Vendas</h5>
+                
+                <!-- BOTÃO DE EXPORTAR RELATÓRIO (SÓ ADMIN VÊ) -->
+                {% if session.get('is_admin') %}
+                <a href="/exportar_relatorio" class="btn btn-sm btn-success fw-bold">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar CSV
+                </a>
+                {% endif %}
             </div>
-            <div class="card-body">
-                <table class="table table-striped">
+            
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Vendedor</th>
                             <th>Cliente</th>
                             <th>Produto</th>
-                            <th>Qtd</th>
+                            <th class="text-center">Qtd</th>
                             <th>Total</th>
-                            <th>Ações</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for v in vendas %}
                         <tr>
-                            <td>{{ v.id }}</td>
-                            <td>{{ v.cliente.nome }}</td>
-                            <td>{{ v.produto.nome }}</td>
-                            <td>{{ v.quantidade }}</td>
-                            <!-- Calcula o total multiplicando a quantidade pelo preço do produto -->
-                            <td>R$ {{ "%.2f"|format(v.quantidade * v.produto.preco) }}</td>
+                            <td>#{{ v.id }}</td>
+                            
+                            <!-- COLUNA: VENDEDOR -->
                             <td>
-                                <a href="/excluir_venda/{{ v.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza? O produto voltará para o estoque.')">Cancelar Venda</a>
+                                {% if v.vendedor %}
+                                    <span class="badge bg-secondary"><i class="bi bi-person"></i> {{ v.vendedor.nome.split()[0] }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">Não registrado</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="fw-bold">{{ v.cliente.nome }}</td>
+                            <td>{{ v.produto.nome }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">{{ v.quantidade }} un.</span>
+                            </td>
+                            <!-- Formatação Brasileira de Moeda -->
+                            <td class="fw-bold text-success">
+                                R$ {{ "%.2f"|format(v.quantidade * v.produto.preco)|replace('.', ',') }}
+                            </td>
+                            <td class="text-center">
+                                
+                                <!-- BOTÃO RECIBO (Todos veem) -->
+                                <a href="/recibo/{{ v.id }}" target="_blank" class="btn btn-sm btn-outline-dark" title="Imprimir Recibo">
+                                    <i class="bi bi-printer"></i> Recibo
+                                </a>
+
+                                <!-- BOTÃO CANCELAR (Só Admin) -->
+                                {% if session.get('is_admin') %}
+                                <a href="/excluir_venda/{{ v.id }}" class="btn btn-sm btn-outline-danger" title="Cancelar Venda e Devolver ao Estoque" onclick="return confirm('Tem certeza? O produto voltará para o estoque.')">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                {% endif %}
+
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Nenhuma venda encontrada com estes filtros.</td>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Nenhuma venda registrada no sistema.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

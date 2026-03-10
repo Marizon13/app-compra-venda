@@ -1,23 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+import csv
+from io import StringIO
 
 app = Flask(__name__)
 
-# Configuração de Segurança (Necessário para usar Login/Sessão)
 app.secret_key = 'sua_chave_secreta_aqui'
-
-# Configuração do Banco de Dados PostgreSQL
+# MANTIDA A SUA CONEXÃO COM POSTGRESQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/appcompravenda'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELOS (TABELAS DO BANCO) ---
+# --- MODELOS ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    nome = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    senha = db.Column(db.String(100), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class Produto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -35,21 +37,30 @@ class Venda(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=False)
+    vendedor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True) # ATRELADO AO VENDEDOR
     quantidade = db.Column(db.Integer, nullable=False)
     
     cliente = db.relationship('Cliente', backref=db.backref('vendas', lazy=True))
     produto = db.relationship('Produto', backref=db.backref('vendas', lazy=True))
+    vendedor = db.relationship('Usuario', backref=db.backref('vendas', lazy=True)) # RELAÇÃO COM USUÁRIO
 
-# Cria as tabelas e o usuário padrão
+# --- INICIALIZAÇÃO DO BANCO E USUÁRIOS ---
 with app.app_context():
     db.create_all()
-    # Cria o usuário admin se não existir nenhum
-    if not Usuario.query.first():
-        admin = Usuario(username='admin', password='123')
+    
+    # Verifica se o admin existe pelo email, se não, cria
+    if not Usuario.query.filter_by(email='admin@loja.com').first():
+        admin = Usuario(nome='Chefe (Admin)', email='admin@loja.com', senha='123', is_admin=True)
         db.session.add(admin)
         db.session.commit()
+        
+    # Verifica se o vendedor existe, se não, cria
+    if not Usuario.query.filter_by(email='vendedor@loja.com').first():
+        vendedor = Usuario(nome='Vendedor Padrão', email='vendedor@loja.com', senha='123', is_admin=False)
+        db.session.add(vendedor)
+        db.session.commit()
 
-# --- CADEADO DE SEGURANÇA (DECORATOR) ---
+# --- CADEADOS DE SEGURANÇA ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -58,39 +69,89 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Cadeado exclusivo para o Admin
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            return "<h1>Acesso Negado!</h1><p>Apenas o Administrador pode acessar esta página.</p><a href='/vendas'>Voltar para Vendas</a>"
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- ROTAS DE LOGIN E LOGOUT ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     erro = None
     if request.method == 'POST':
-        usuario = request.form['username']
-        senha = request.form['password']
+        email_digitado = request.form['email']
+        senha_digitada = request.form['password']
         
-        user_bd = Usuario.query.filter_by(username=usuario, password=senha).first()
+        user_bd = Usuario.query.filter_by(email=email_digitado, senha=senha_digitada).first()
         
         if user_bd:
-            session['usuario_logado'] = user_bd.username
-            return redirect(url_for('index'))
+            session['usuario_logado'] = user_bd.email
+            session['usuario_nome'] = user_bd.nome
+            session['is_admin'] = user_bd.is_admin
+            
+            if user_bd.is_admin:
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('vendas'))
         else:
-            erro = "Usuário ou senha incorretos!"
+            erro = "E-mail ou senha incorretos!"
             
     return render_template('login.html', erro=erro)
 
 @app.route('/logout')
 def logout():
-    session.pop('usuario_logado', None)
+    session.clear()
     return redirect(url_for('login'))
 
-# --- ROTA DO DASHBOARD ---
+# --- NOVA ROTA DE USUÁRIOS ---
+@app.route('/usuarios', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def usuarios():
+    if request.method == 'POST':
+        nome = request.form['nome']
+        email = request.form['email']
+        senha = request.form['senha']
+        is_admin = True if request.form.get('is_admin') == 'on' else False
+        
+        novo_usuario = Usuario(nome=nome, email=email, senha=senha, is_admin=is_admin)
+        db.session.add(novo_usuario)
+        db.session.commit()
+        return redirect('/usuarios')
+        
+    lista_usuarios = Usuario.query.all()
+    return render_template('usuarios.html', usuarios=lista_usuarios)
+
+# --- ROTA DO DASHBOARD (SÓ ADMIN) ---
 @app.route('/')
 @login_required
+@admin_required
 def index():
     total_produtos = Produto.query.count()
     total_clientes = Cliente.query.count()
     total_vendas = Venda.query.count()
     todas_vendas = Venda.query.all()
     receita_total = sum(v.quantidade * v.produto.preco for v in todas_vendas)
-    return render_template('index.html', total_produtos=total_produtos, total_clientes=total_clientes, total_vendas=total_vendas, receita_total=receita_total)
+    
+    limite_minimo = 5 
+    produtos_baixo_estoque = Produto.query.filter(Produto.estoque <= limite_minimo).all()
+    
+    todos_produtos = Produto.query.all()
+    nomes_produtos = [p.nome for p in todos_produtos]
+    estoques_produtos = [p.estoque for p in todos_produtos]
+    
+    return render_template('index.html', 
+                           total_produtos=total_produtos, 
+                           total_clientes=total_clientes, 
+                           total_vendas=total_vendas, 
+                           receita_total=receita_total,
+                           produtos_baixo_estoque=produtos_baixo_estoque,
+                           nomes_produtos=nomes_produtos,
+                           estoques_produtos=estoques_produtos)
 
 # --- ROTAS DE PRODUTOS ---
 @app.route('/produtos', methods=['GET', 'POST'])
@@ -121,9 +182,13 @@ def editar_produto(id):
 
 @app.route('/excluir_produto/<int:id>')
 @login_required
+@admin_required
 def excluir_produto(id):
     produto = Produto.query.get(id)
     if produto:
+        vendas = Venda.query.filter_by(produto_id=id).all()
+        for venda in vendas:
+            db.session.delete(venda)
         db.session.delete(produto)
         db.session.commit()
     return redirect('/produtos')
@@ -157,14 +222,18 @@ def editar_cliente(id):
 
 @app.route('/excluir_cliente/<int:id>')
 @login_required
+@admin_required
 def excluir_cliente(id):
     cliente = Cliente.query.get(id)
     if cliente:
+        vendas = Venda.query.filter_by(cliente_id=id).all()
+        for venda in vendas:
+            db.session.delete(venda)
         db.session.delete(cliente)
         db.session.commit()
     return redirect('/clientes')
 
-# --- ROTAS DE VENDAS (COM ESTOQUE E FILTROS) ---
+# --- ROTAS DE VENDAS ---
 @app.route('/vendas', methods=['GET', 'POST'])
 @login_required
 def vendas():
@@ -174,17 +243,20 @@ def vendas():
         quantidade = int(request.form['quantidade'])
         produto = Produto.query.get(produto_id)
         
-        # Verifica se tem estoque
+        # BUSCA O VENDEDOR LOGADO
+        email_logado = session['usuario_logado']
+        vendedor_atual = Usuario.query.filter_by(email=email_logado).first()
+        
         if produto.estoque >= quantidade:
             produto.estoque -= quantidade
-            nova_venda = Venda(cliente_id=cliente_id, produto_id=produto_id, quantidade=quantidade)
+            # SALVA O ID DO VENDEDOR NA VENDA
+            nova_venda = Venda(cliente_id=cliente_id, produto_id=produto_id, quantidade=quantidade, vendedor_id=vendedor_atual.id)
             db.session.add(nova_venda)
             db.session.commit()
             return redirect('/vendas')
         else:
             return f"<h1>Erro: Estoque insuficiente! O produto {produto.nome} só tem {produto.estoque} unidades.</h1><br><a href='/vendas'>Voltar</a>"
     
-    # Lógica de Filtros (Busca)
     cliente_filtro = request.args.get('cliente_id')
     produto_filtro = request.args.get('produto_id')
     
@@ -208,14 +280,53 @@ def vendas():
 
 @app.route('/excluir_venda/<int:id>')
 @login_required
+@admin_required
 def excluir_venda(id):
     venda = Venda.query.get(id)
     if venda:
-        # Devolve para o estoque
         venda.produto.estoque += venda.quantidade
         db.session.delete(venda)
         db.session.commit()
     return redirect('/vendas')
+
+@app.route('/exportar_relatorio')
+@login_required
+@admin_required
+def exportar_relatorio():
+    todas_vendas = Venda.query.all()
+    
+    si = StringIO()
+    cw = csv.writer(si, delimiter=';') 
+    
+    # ADICIONADA A COLUNA DE VENDEDOR NO EXCEL
+    cw.writerow(['ID da Venda', 'Vendedor', 'Cliente', 'Produto', 'Quantidade', 'Preço Unitário', 'Total da Venda'])
+    
+    for v in todas_vendas:
+        total = v.quantidade * v.produto.preco
+        nome_vendedor = v.vendedor.nome if v.vendedor else "Vendedor Apagado"
+        
+        cw.writerow([
+            v.id, 
+            nome_vendedor,
+            v.cliente.nome, 
+            v.produto.nome, 
+            v.quantidade, 
+            f"R$ {v.produto.preco:.2f}".replace('.', ','), 
+            f"R$ {total:.2f}".replace('.', ',')
+        ])
+        
+    output = Response(si.getvalue().encode('utf-8-sig'), mimetype='text/csv')
+    output.headers["Content-Disposition"] = "attachment; filename=relatorio_vendas.csv"
+    
+    return output
+
+# --- NOVA ROTA: GERAR RECIBO ---
+@app.route('/recibo/<int:id>')
+@login_required
+def recibo(id):
+    # Busca a venda específica pelo ID
+    venda = Venda.query.get_or_404(id)
+    return render_template('recibo.html', venda=venda)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo #{{ venda.id }}</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; padding: 20px; font-size: 14px; }
+        .cupom { max-width: 350px; margin: 0 auto; border: 1px dashed #000; padding: 15px; }
+        .text-center { text-align: center; }
+        .linha { border-bottom: 1px dashed #000; margin: 10px 0; }
+        .bold { font-weight: bold; }
+        .flex { display: flex; justify-content: space-between; }
+        @media print {
+            .no-print { display: none; }
+            .cupom { border: none; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    
+    <div class="no-print text-center" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px; cursor: pointer;">🖨️ Imprimir ou Salvar PDF</button>
+        <button onclick="window.close()" style="padding: 10px; cursor: pointer;">❌ Fechar</button>
+    </div>
+
+    <div class="cupom">
+        <!-- TÍTULO NEUTRO E PROFISSIONAL -->
+        <h2 class="text-center" style="margin: 0;">RECIBO DE VENDA</h2>
+        <p class="text-center" style="margin: 5px 0; font-size: 12px; color: #555;">* Documento sem valor fiscal *</p>
+        
+        <div class="linha"></div>
+        
+        <p><strong>Recibo nº:</strong> #{{ venda.id }}</p>
+        <p><strong>Cliente:</strong> {{ venda.cliente.nome }}</p>
+        <p><strong>Vendedor:</strong> {% if venda.vendedor %}{{ venda.vendedor.nome }}{% else %}Não registrado{% endif %}</p>
+        
+        <div class="linha"></div>
+        
+        <div class="flex bold">
+            <span>PRODUTO</span>
+            <span>TOTAL</span>
+        </div>
+        <div class="flex" style="margin-top: 5px;">
+            <span>{{ venda.quantidade }}x {{ venda.produto.nome }}</span>
+            <span>R$ {{ "%.2f"|format(venda.quantidade * venda.produto.preco)|replace('.', ',') }}</span>
+        </div>
+        
+        <div class="linha"></div>
+        
+        <div class="flex bold" style="font-size: 16px;">
+            <span>TOTAL A PAGAR</span>
+            <span>R$ {{ "%.2f"|format(venda.quantidade * venda.produto.preco)|replace('.', ',') }}</span>
+        </div>
+        
+        <div class="linha"></div>
+        
+        <p class="text-center" style="margin-top: 20px;">Obrigado pela preferência!</p>
+        <p class="text-center">Volte sempre!</p>
+    </div>
+
+</body>
+</html>
